@@ -20,7 +20,7 @@ Create a file called `helm-chart/config.json` and add/change values as appropria
 Use helm to install the provided chart.
 
 ```
-helm install helm install --name my-release-name --namespace my-namespace ./helm-chart
+helm install --name my-release-name --namespace my-namespace ./helm-chart
 ```
 
 A node port service is created, use it for the docker hub webhook url. This service will not deploy images tagged `latest`, the best way to use this project for automatic deployments is to create a `post_push` hook for Docker Hub that tags the image with a unique tag (such as the commit sha) and pushes it to docker hub.
