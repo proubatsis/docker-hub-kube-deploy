@@ -16,10 +16,7 @@ namespace DeployApi.Services {
         private const string CHANGE_CAUSE_ANNOTATION = "kubernetes.io/change-cause";
 
         public KubernetesApiService(ILogger<KubernetesApiService> logger) {
-            // var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
-            var config = new KubernetesClientConfiguration {
-                Host = "http://127.0.0.1:8001"
-            };
+            var config = KubernetesClientConfiguration.InClusterConfig();
 
             _client = new Kubernetes(config);
             _logger = logger;
