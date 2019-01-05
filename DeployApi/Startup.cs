@@ -34,7 +34,10 @@ namespace DeployApi
                     NamingStrategy = new SnakeCaseNamingStrategy()
                 });
 
+            services.AddHttpClient();
+
             services.AddScoped<IKubernetesApiService, KubernetesApiService>();
+            services.AddScoped<IDockerHubCallbackService, DockerHubCallbackService>();
             services.AddSingleton<IDeploymentMappingService, DeploymentMappingService>();
         }
 

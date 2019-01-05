@@ -26,6 +26,7 @@ namespace DeployApi.Tests
 
             _client = _factory.WithWebHostBuilder(builder => {
                 builder.ConfigureTestServices(services => {
+                    services.AddScoped<IDockerHubCallbackService, MockDockerHubCallbackService>();
                     services.AddScoped<IKubernetesApiService, MockKubernetesApiService>();
                 });
             })
@@ -65,6 +66,17 @@ namespace DeployApi.Tests
             // Verify that an invalid request body results in BadRequest status
             var response = await _client.PostAsJsonAsync<JObject>("/api/docker-hub", TestData.LoadJson("webhook-invalid"));
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode); 
+        }
+
+        [Fact]
+        public async Task CallsDockerHubCallback() {
+            // Verify that the dockerhub callback is called
+            var before = MockDockerHubCallbackService.SentCount;
+            var response = await _client.PostAsJsonAsync<JObject>("/api/docker-hub", TestData.LoadJson("webhook-latest-tag"));
+            var after = MockDockerHubCallbackService.SentCount;
+            
+            Assert.True(after > before, $"{after} should be greater than {before}!");
+            Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
         }
     }
 }
