@@ -2,9 +2,16 @@ using System;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
+using DeployApi.Models.DockerHub;
+using DeployApi.Models.Kubernetes;
+using DeployApi.Services;
 using DeployApi.Tests.Util;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json.Linq;
+using Newtonsoft.Json.Serialization;
 using Xunit;
 
 namespace DeployApi.Tests
@@ -16,7 +23,13 @@ namespace DeployApi.Tests
 
         public DockerHubTest(WebApplicationFactory<DeployApi.Startup> factory) {
             _factory = factory;
-            _client = factory.CreateClient();
+
+            _client = _factory.WithWebHostBuilder(builder => {
+                builder.ConfigureTestServices(services => {
+                    services.AddScoped<IKubernetesApiService, MockKubernetesApiService>();
+                });
+            })
+            .CreateClient();
         }
 
         [Fact]
@@ -28,8 +41,16 @@ namespace DeployApi.Tests
         [Fact]
         public async Task CanDeployImage() {
             // Verify that image is deployed to a Kubernetes Deployment
+            var data = TestData.LoadJson("webhook-commit-sha-tag");
+            var webhook = data.ToObject<WebhookRequestModel>();
+
             var response = await _client.PostAsJsonAsync<JObject>("/api/docker-hub", TestData.LoadJson("webhook-commit-sha-tag"));
+            var deployment = await response.Content.ReadAsAsync<JObject>();
+            var x = deployment["name"];
+
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.Equal("my-deployment", deployment["name"].ToString());
+            Assert.Equal("my-deployment-test-namespace-proubatsis/blog-site-ff20631c5a9ef0ef040e8b4b3b51fc65abffed96", deployment["container_name"].ToString());
         }
 
         [Fact]

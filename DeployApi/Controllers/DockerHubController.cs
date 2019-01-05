@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc;
 using DeployApi.Models.DockerHub;
 using System.Net;
 using DeployApi.Services;
+using DeployApi.Models.Kubernetes;
+using Microsoft.Extensions.Configuration;
 
 namespace DeployApi.Controllers
 {
@@ -14,25 +16,33 @@ namespace DeployApi.Controllers
     public class DockerHubController : ControllerBase
     {
         private const string LATEST_TAG = "latest";
+        private const string DEFAULT_NAMESPACE = "default";
 
-        private IKubernetesApiService _service;
+        private readonly IKubernetesApiService _kubernetesService;
+        private readonly IDeploymentMappingService _mappingService;
+        private readonly string _kubernetesNamespace;
 
-        // POST api/values
+        public DockerHubController(
+            IKubernetesApiService kubernetesService,
+            IDeploymentMappingService mappingService,
+            IConfiguration configuration) {
+            _kubernetesService = kubernetesService;
+            _mappingService = mappingService;
+            _kubernetesNamespace = configuration.GetValue("KubernetesNamespace", DEFAULT_NAMESPACE);
+        }
+
         [HttpPost]
-        public ActionResult<WebhookCallbackModel> Post([FromBody] WebhookRequestModel webhook)
+        public async Task<ActionResult<DeploymentModel>> Post([FromBody] WebhookRequestModel webhook)
         {
+            var imageName = string.Format("{0}/{1}", webhook.Repository.Namespace, webhook.Repository.Name);
+
             if (webhook.PushData.Tag == LATEST_TAG) {
-                return Accepted(new WebhookCallbackModel {
-                    State = "success",
-                    Description = "Image not deployed because tag is \"latest\""
-                });
+                return Accepted();
             }
 
-            return new WebhookCallbackModel {
-                State = "success",
-                Description = "Image deployed",
-                Context = webhook.CallbackUrl
-            };
+            var deploymentName = await _mappingService.GetDeploymentNameFromImage(imageName);
+            var deployment = await _kubernetesService.SetDeploymentImage(deploymentName, _kubernetesNamespace, imageName, webhook.PushData.Tag);
+            return Ok(deployment);
         }
     }
 }
