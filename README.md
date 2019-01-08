@@ -8,7 +8,7 @@ to listen for updated images and then deploys new images to a Kubernetes cluster
 Use helm to install the provided chart. Add as many mappings as needed.
 
 ```
-helm install helm install --name my-release-name --namespace my-namespace \
+helm install --name my-release-name --namespace my-namespace \
 --set secret.mapping[0].image="docker-hub-repo/image-name" \
 --set secret.mapping[0].deployment="kubernetes-deployment-to-updated" \
 --set secret.mapping[1].image="docker-hub-repo/other-image" \
