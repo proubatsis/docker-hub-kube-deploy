@@ -17,7 +17,9 @@ service:
   port: 80
 
 secret:
-  configFile: "config.json"
+  mapping:
+  - image: nginx
+    deployment: nginx-deployment
 
 ingress:
   enabled: false

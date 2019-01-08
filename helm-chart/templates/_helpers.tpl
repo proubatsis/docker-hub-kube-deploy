@@ -30,3 +30,17 @@ Create chart name and version as used by the chart label.
 {{- define "chart.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
+
+{{- define "config.json" -}}
+{{- printf "{" -}}
+{{- printf "\"ImageToDeploymentMapping\": {" -}}
+{{- range $i, $el := .Values.secret.mapping -}}
+{{- if  $i -}}
+{{- printf "," -}}
+{{- end -}}
+{{- printf "\"%s\": \"%s\"" $el.image $el.deployment -}}
+{{- end -}}
+{{- printf "}," -}}
+{{- printf "\"KubernetesNamespace\": \"%s\"" .Release.Namespace -}}
+{{- printf "}" -}}
+{{- end -}}
